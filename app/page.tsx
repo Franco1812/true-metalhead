@@ -3,7 +3,10 @@ import { AlbumCard } from "@/components/album-card"
 import { SiteHeader } from "@/components/site-header"
 import type { Album } from "@/lib/db/schema"
 
-export const dynamic = "force-dynamic"
+// Cacheada 1 hora. Las server actions llaman revalidatePath("/") al guardar,
+// asi que una resena nueva aparece al instante igual. Con force-dynamic cada
+// visita despertaba la base (Neon suspende a los 5 min sin trafico).
+export const revalidate = 3600
 
 export default async function HomePage() {
   const [albums, reviews] = await Promise.all([getAlbums(), getAllReviews()])

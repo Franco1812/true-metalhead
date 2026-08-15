@@ -1,11 +1,23 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
-import { getAlbumWithReviews } from "@/app/actions/albums"
+import { getAlbumWithReviews, getAlbums } from "@/app/actions/albums"
 import { SiteHeader } from "@/components/site-header"
 import { VinylCover } from "@/components/vinyl-cover"
 import { ReviewPanel } from "@/components/review-panel"
 import { AUTHORS } from "@/lib/authors"
+
+// Igual que la home: cacheada, y revalidatePath(`/album/${id}`) la refresca
+// apenas se guarda o borra una resena.
+export const revalidate = 3600
+
+// Sin esto el segmento dinamico se renderiza en cada visita y `revalidate` se
+// ignora. Prerenderiza las fichas existentes; las de discos nuevos se generan
+// on-demand y quedan cacheadas igual (dynamicParams viene en true por defecto).
+export async function generateStaticParams() {
+  const albums = await getAlbums()
+  return albums.map((a) => ({ id: String(a.id) }))
+}
 
 export default async function AlbumPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
