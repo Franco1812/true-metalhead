@@ -25,7 +25,8 @@ export function VinylCover({ title, artist, coverUrl, className }: Props) {
             src={coverUrl || "/placeholder.svg"}
             alt={`Portada de ${title} de ${artist}`}
             className="h-full w-full object-cover"
-            crossOrigin="anonymous"
+            loading="lazy"
+            decoding="async"
           />
         ) : (
           <div className="flex h-full w-full flex-col justify-between bg-[linear-gradient(145deg,var(--card),oklch(0.13_0.006_40))] p-4">
