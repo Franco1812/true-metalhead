@@ -1,12 +1,15 @@
 import type { Review } from "@/lib/db/schema"
 import { Rating } from "@/components/rating"
+import { ReviewEditor } from "@/components/review-editor"
 
 export function ReviewPanel({
   author,
   review,
+  albumId,
 }: {
   author: string
   review: Review | null | undefined
+  albumId: number
 }) {
   return (
     <article className="flex flex-col rounded-md border border-border/70 bg-card p-4 sm:p-6">
@@ -37,6 +40,10 @@ export function ReviewPanel({
           </p>
         )}
       </div>
+
+      {/* Se muestra solo si hay sesión de admin; lo resuelve en el cliente
+          para no volver dinámica la página. */}
+      <ReviewEditor albumId={albumId} author={author} review={review ?? null} />
     </article>
   )
 }

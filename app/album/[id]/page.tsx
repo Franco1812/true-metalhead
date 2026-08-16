@@ -66,7 +66,14 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
           <div className="mt-4 grid gap-6 md:grid-cols-2">
             {AUTHORS.map((author) => {
               const review = albumReviews.find((r) => r.author === author) ?? null
-              return <ReviewPanel key={author} author={author} review={review} />
+              return (
+                <ReviewPanel
+                  key={author}
+                  author={author}
+                  review={review}
+                  albumId={album.id}
+                />
+              )
             })}
           </div>
         </div>

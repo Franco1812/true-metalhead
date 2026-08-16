@@ -25,3 +25,14 @@ CREATE TABLE IF NOT EXISTS reviews (
   body       text NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now()
 );
+
+-- Tapas subidas desde /admin. Van en tabla aparte y no como columna de
+-- `albums` porque getAlbums() hace SELECT * y traeria los bytes de todas
+-- las tapas en cada carga de la home.
+-- Las sirve app/api/covers/[id]/route.ts
+CREATE TABLE IF NOT EXISTS album_covers (
+  album_id   integer PRIMARY KEY,
+  data       bytea NOT NULL,
+  mime       text NOT NULL,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
