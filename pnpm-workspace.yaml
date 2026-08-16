@@ -1,2 +1,10 @@
+# Desde pnpm 10 la config dejo de leerse del campo "pnpm" de package.json y
+# vive aca. Ver https://pnpm.io/settings
+#
+# msw entra como dependencia transitiva de shadcn y trae un script de install
+# que no necesitamos (registra un service worker para mockear HTTP en tests).
+# pnpm 10+ corta el install con ERR_PNPM_IGNORED_BUILDS si no se declara
+# explicitamente que hacer con ese script, y un install que sale con codigo 1
+# rompe el deploy en Vercel.
 allowBuilds:
-  msw: set this to true or false
+  msw: false
