@@ -32,14 +32,15 @@ export default async function HomePage() {
       <section className="border-b border-border/60">
         <div className="mx-auto max-w-6xl px-4 py-16 md:py-24">
           <p className="font-display text-sm uppercase tracking-[0.4em] text-accent">
-            Reseñas a dos manos
+            Sin poses
           </p>
           <h1 className="mt-4 max-w-3xl font-display text-5xl font-700 uppercase leading-[0.95] tracking-tight text-foreground text-balance md:text-7xl">
-            Todo lo que gira a 33 rpm
+            Reseñá como un verdadero true
           </h1>
           <p className="mt-6 max-w-xl text-pretty leading-relaxed text-muted-foreground">
-            Una colección personal de reseñas de discos. Cada álbum lleva la
-            mirada de dos oyentes: dos escuchas, dos opiniones, un mismo surco.
+            Acá están las reseñas de los trues de verdad. No seas poser:
+            escuchá el disco entero, de la primera a la última, y recién ahí
+            venís a opinar.
           </p>
           <div className="mt-8 flex gap-8 text-sm text-muted-foreground">
             <div>

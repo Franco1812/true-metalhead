@@ -1,10 +1,11 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { albums, albumCovers, reviews } from "@/lib/db/schema"
-import { and, asc, eq } from "drizzle-orm"
+import { albums, albumCovers, reviews, users } from "@/lib/db/schema"
+import { and, asc, desc, eq, isNull, or, sql } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { isAdmin } from "@/lib/session"
+import { requireUser } from "@/lib/auth"
 
 export async function getAlbums() {
   return db
@@ -24,8 +25,65 @@ export async function getAlbumWithReviews(id: number) {
     .select()
     .from(reviews)
     .where(eq(reviews.albumId, id))
-    .orderBy(asc(reviews.author))
+    .orderBy(asc(reviews.createdAt), asc(reviews.id))
   return { album, reviews: albumReviews }
+}
+
+// El muro de /resenas: todo lo que escribio todo el mundo, lo ultimo primero.
+export async function getReviewsFeed(limit = 200) {
+  return db
+    .select({
+      id: reviews.id,
+      body: reviews.body,
+      rating: reviews.rating,
+      author: reviews.author,
+      userId: reviews.userId,
+      createdAt: reviews.createdAt,
+      albumId: albums.id,
+      albumTitle: albums.title,
+      albumArtist: albums.artist,
+      albumYear: albums.year,
+      albumCoverUrl: albums.coverUrl,
+    })
+    .from(reviews)
+    .innerJoin(albums, eq(reviews.albumId, albums.id))
+    .orderBy(desc(reviews.createdAt), desc(reviews.id))
+    .limit(limit)
+}
+
+// Solo id y nombre: el email y el hash no salen nunca de acá.
+export async function getUsers() {
+  return db
+    .select({ id: users.id, name: users.name, createdAt: users.createdAt })
+    .from(users)
+    .orderBy(asc(users.name))
+}
+
+export async function getUserWithReviews(id: number) {
+  const [user] = await db
+    .select({ id: users.id, name: users.name, createdAt: users.createdAt })
+    .from(users)
+    .where(eq(users.id, id))
+  if (!user) return null
+  const suyas = await db
+    .select({
+      id: reviews.id,
+      body: reviews.body,
+      rating: reviews.rating,
+      author: reviews.author,
+      userId: reviews.userId,
+      createdAt: reviews.createdAt,
+      albumId: albums.id,
+      albumTitle: albums.title,
+      albumArtist: albums.artist,
+      albumYear: albums.year,
+      albumCoverUrl: albums.coverUrl,
+    })
+    .from(reviews)
+    .innerJoin(albums, eq(reviews.albumId, albums.id))
+    .where(eq(reviews.userId, id))
+    .orderBy(desc(reviews.createdAt), desc(reviews.id))
+  return { user, reviews: suyas }
 }
 
 // Vercel corta el cuerpo de una server action en 4.5 MB.
@@ -107,42 +165,71 @@ export async function deleteAlbum(id: number) {
   await db.delete(albumCovers).where(eq(albumCovers.albumId, id))
   await db.delete(albums).where(eq(albums.id, id))
   revalidatePath("/")
+  revalidatePath("/resenas")
   revalidatePath("/admin")
 }
 
 export async function upsertReview(formData: FormData) {
-  if (!(await isAdmin())) throw new Error("No autorizado")
+  const user = await requireUser()
   const albumId = Number.parseInt(String(formData.get("albumId") ?? ""), 10)
-  const author = String(formData.get("author") ?? "").trim()
   const body = String(formData.get("body") ?? "").trim()
   const ratingRaw = String(formData.get("rating") ?? "").trim()
-  if (!albumId || !author || !body) {
-    throw new Error("Álbum, autor y texto son obligatorios")
-  }
+  if (!albumId || !body) throw new Error("Álbum y texto son obligatorios")
   const rating = ratingRaw ? Number.parseInt(ratingRaw, 10) : null
+  if (rating !== null && (Number.isNaN(rating) || rating < 1 || rating > 5)) {
+    throw new Error("El puntaje va de 1 a 5")
+  }
 
-  // One review per author per album: replace if it exists.
-  const [existing] = await db
+  // Una reseña por persona y por disco: si ya hay, se reemplaza.
+  // El `or` también agarra las reseñas viejas sin dueño que llevan su nombre;
+  // si no, escribir sobre ese disco dejaría dos reseñas suyas en la ficha.
+  const candidatas = await db
     .select()
     .from(reviews)
-    .where(and(eq(reviews.albumId, albumId), eq(reviews.author, author)))
+    .where(
+      and(
+        eq(reviews.albumId, albumId),
+        or(
+          eq(reviews.userId, user.id),
+          and(
+            isNull(reviews.userId),
+            sql`lower(${reviews.author}) = ${user.name.toLowerCase()}`,
+          ),
+        ),
+      ),
+    )
+  const existing =
+    candidatas.find((r) => r.userId === user.id) ?? candidatas[0]
 
   if (existing) {
     await db
       .update(reviews)
-      .set({ body, rating })
+      .set({ body, rating, userId: user.id, author: user.name })
       .where(eq(reviews.id, existing.id))
   } else {
-    await db.insert(reviews).values({ albumId, author, body, rating })
+    await db
+      .insert(reviews)
+      .values({ albumId, author: user.name, userId: user.id, body, rating })
   }
   revalidatePath("/")
+  revalidatePath("/resenas")
   revalidatePath(`/album/${albumId}`)
+  revalidatePath(`/usuario/${user.id}`)
   revalidatePath("/admin")
 }
 
 export async function deleteReview(id: number, albumId: number) {
-  if (!(await isAdmin())) throw new Error("No autorizado")
+  const [existing] = await db.select().from(reviews).where(eq(reviews.id, id))
+  if (!existing) return
+  // Cada quien borra la suya; el admin puede borrar cualquiera.
+  const user = await requireUser()
+  if (existing.userId !== user.id && !(await isAdmin())) {
+    throw new Error("No autorizado")
+  }
   await db.delete(reviews).where(eq(reviews.id, id))
+  revalidatePath("/")
+  revalidatePath("/resenas")
   revalidatePath(`/album/${albumId}`)
+  revalidatePath(`/usuario/${user.id}`)
   revalidatePath("/admin")
 }

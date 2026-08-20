@@ -5,7 +5,7 @@ import { getAlbumWithReviews, getAlbums } from "@/app/actions/albums"
 import { SiteHeader } from "@/components/site-header"
 import { VinylCover } from "@/components/vinyl-cover"
 import { ReviewPanel } from "@/components/review-panel"
-import { AUTHORS } from "@/lib/authors"
+import { MiResena } from "@/components/my-review"
 
 // Igual que la home: cacheada, y revalidatePath(`/album/${id}`) la refresca
 // apenas se guarda o borra una resena.
@@ -62,20 +62,24 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
         </div>
 
         <div className="mt-12">
-          <h2 className="font-display text-xs uppercase tracking-[0.3em] text-muted-foreground">Las reseñas</h2>
-          <div className="mt-4 grid gap-6 md:grid-cols-2">
-            {AUTHORS.map((author) => {
-              const review = albumReviews.find((r) => r.author === author) ?? null
-              return (
-                <ReviewPanel
-                  key={author}
-                  author={author}
-                  review={review}
-                  albumId={album.id}
-                />
-              )
-            })}
-          </div>
+          <h2 className="font-display text-xs uppercase tracking-[0.3em] text-muted-foreground">
+            {albumReviews.length === 1
+              ? "1 reseña"
+              : `${albumReviews.length} reseñas`}
+          </h2>
+          {albumReviews.length === 0 ? (
+            <p className="mt-4 text-sm italic text-muted-foreground">
+              Todavía nadie reseñó este disco.
+            </p>
+          ) : (
+            <div className="mt-4 grid gap-6 md:grid-cols-2">
+              {albumReviews.map((review) => (
+                <ReviewPanel key={review.id} review={review} />
+              ))}
+            </div>
+          )}
+
+          <MiResena albumId={album.id} reviews={albumReviews} />
         </div>
       </main>
     </div>

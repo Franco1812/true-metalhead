@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react"
 import { isAdmin } from "@/lib/session"
 import { getAlbums, getAllReviews } from "@/app/actions/albums"
 import { logout } from "@/app/actions/auth"
-import { AUTHORS } from "@/lib/authors"
+import { getSessionUser } from "@/lib/auth"
 import { LoginForm } from "@/components/admin/login-form"
 import { AlbumForm } from "@/components/admin/album-form"
 import { ReviewForm } from "@/components/admin/review-form"
@@ -20,7 +20,13 @@ export default async function AdminPage() {
       <div className="flex min-h-svh flex-col items-center justify-center px-4">
         <div className="w-full max-w-sm">
           <h1 className="font-display text-2xl font-700 uppercase tracking-tight text-foreground">Zona de carga</h1>
-          <p className="mt-1 mb-6 text-sm text-muted-foreground">Ingresá la contraseña para administrar los discos.</p>
+          <p className="mt-1 mb-6 text-sm text-muted-foreground">
+            Ingresá con tu{" "}
+            <Link href="/ingresar?volver=/admin" className="text-primary underline-offset-4 hover:underline">
+              cuenta de administrador
+            </Link>{" "}
+            o con la contraseña del sitio.
+          </p>
           <LoginForm />
           <Link href="/" className="mt-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="size-4" />
@@ -31,7 +37,11 @@ export default async function AdminPage() {
     )
   }
 
-  const [albums, reviews] = await Promise.all([getAlbums(), getAllReviews()])
+  const [albums, reviews, user] = await Promise.all([
+    getAlbums(),
+    getAllReviews(),
+    getSessionUser(),
+  ])
   const reviewCounts: Record<number, number> = {}
   for (const r of reviews) reviewCounts[r.albumId] = (reviewCounts[r.albumId] ?? 0) + 1
 
@@ -68,8 +78,16 @@ export default async function AdminPage() {
           <h2 className="mb-4 font-display text-sm uppercase tracking-[0.3em] text-accent">Agregar / editar reseña</h2>
           {albums.length === 0 ? (
             <p className="text-sm text-muted-foreground">Primero agregá un disco.</p>
+          ) : user ? (
+            <ReviewForm albums={albums} autor={user.name} />
           ) : (
-            <ReviewForm albums={albums} authors={AUTHORS} />
+            // Se entró con la contraseña vieja del sitio, que no dice quién sos.
+            <p className="text-sm text-muted-foreground">
+              Entrá con tu cuenta para escribir reseñas.{" "}
+              <Link href="/ingresar?volver=/admin" className="text-primary underline-offset-4 hover:underline">
+                Ingresar
+              </Link>
+            </p>
           )}
         </section>
 

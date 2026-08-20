@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { SessionNav } from "@/components/session-nav"
 
 export function SiteHeader() {
   return (
@@ -23,11 +24,12 @@ export function SiteHeader() {
           </Link>
           {/* min-h en mobile: 16px de alto es un blanco imposible de tocar con el dedo. */}
           <Link
-            href="/admin"
-            className="inline-flex min-h-11 items-center uppercase tracking-wider text-muted-foreground transition-colors hover:text-primary sm:min-h-0 sm:tracking-widest"
+            href="/resenas"
+            className="inline-flex min-h-11 items-center uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground sm:min-h-0 sm:tracking-widest"
           >
-            Cargar
+            Reseñas
           </Link>
+          <SessionNav />
         </nav>
       </div>
     </header>

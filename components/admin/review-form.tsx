@@ -11,10 +11,12 @@ const fieldClass =
 
 type Props = {
   albums: Album[]
-  authors: readonly string[]
+  // Se escribe siempre como la cuenta con la que estás logueado: ya no se
+  // elige el autor de una lista fija.
+  autor: string
 }
 
-export function ReviewForm({ albums, authors }: Props) {
+export function ReviewForm({ albums, autor }: Props) {
   const [pending, setPending] = useState(false)
   const [done, setDone] = useState(false)
 
@@ -31,31 +33,17 @@ export function ReviewForm({ albums, authors }: Props) {
 
   return (
     <form action={action} className="grid gap-3">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div>
-          <label htmlFor="albumId" className="mb-1 block text-xs uppercase tracking-wider text-muted-foreground">
-            Disco *
-          </label>
-          <select id="albumId" name="albumId" required className={fieldClass}>
-            {albums.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.artist} — {a.title}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label htmlFor="author" className="mb-1 block text-xs uppercase tracking-wider text-muted-foreground">
-            Autor/a *
-          </label>
-          <select id="author" name="author" required className={fieldClass}>
-            {authors.map((a) => (
-              <option key={a} value={a}>
-                {a}
-              </option>
-            ))}
-          </select>
-        </div>
+      <div>
+        <label htmlFor="albumId" className="mb-1 block text-xs uppercase tracking-wider text-muted-foreground">
+          Disco *
+        </label>
+        <select id="albumId" name="albumId" required className={fieldClass}>
+          {albums.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.artist} — {a.title}
+            </option>
+          ))}
+        </select>
       </div>
       <div>
         <label htmlFor="rating" className="mb-1 block text-xs uppercase tracking-wider text-muted-foreground">
@@ -76,7 +64,8 @@ export function ReviewForm({ albums, authors }: Props) {
         {done ? <span className="text-sm text-accent">Reseña guardada</span> : null}
       </div>
       <p className="text-xs text-muted-foreground">
-        Si ya existe una reseña de ese autor/a para ese disco, se reemplaza.
+        Se guarda como <span className="text-foreground">{autor}</span>. Si ya
+        escribiste sobre ese disco, se reemplaza tu reseña.
       </p>
     </form>
   )
